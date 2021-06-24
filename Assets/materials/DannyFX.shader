@@ -1,41 +1,37 @@
 Shader "Custom/DannyFX"
 {
-    Properties
-    {
-        _Color ("Color", Color) = (1,1,1,1)
-        _MainTex ("Albedo (RGB)", 2D) = "white" {}
-    }
-    SubShader
-    {
-		Tags { "RenderType" = "Opaque" }
- 
-		CGPROGRAM
-		//Notice the "vertex:vert" at the end of the next line
-		#pragma surface surf Standard fullforwardshadows vertex:vert
- 
-		sampler2D _MainTex;
- 
-		struct Input {
-			float2 uv_MainTex;
-		};
- 
-		fixed4 _Color;
- 
- 
-		void vert(inout appdata_full v, out Input o) {
-			
-			UNITY_INITIALIZE_OUTPUT(Input, o);
-		}
- 
-		void surf(Input IN, inout SurfaceOutputStandard o) {
- 
-			fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-			o.Albedo = c.rgb;
- 
-			o.Alpha = c.a;
-		}
-		ENDCG
-	   
-    }
+     Properties 
+     {
+        _Color ("Main Color", Color) = (1,1,1,1)
+        _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {} 
+        _BlendTex ("Blend (RGB)", 2D) = "white"
+        _BlendAlpha ("Blend Alpha", float) = 0
+     }
+     SubShader 
+     {
+        Tags { "Queue"="Geometry-9" "IgnoreProjector"="True" "RenderType"="Transparent" }
+        Lighting Off
+        LOD 200
+        Blend SrcAlpha OneMinusSrcAlpha
+  
+        CGPROGRAM
+        #pragma surface surf Lambert
+  
+        fixed4 _Color;
+        sampler2D _MainTex;
+        sampler2D _BlendTex;
+        float _BlendAlpha;
+  
+        struct Input {
+          float2 uv_MainTex;
+        };
+  
+        void surf (Input IN, inout SurfaceOutput o) {
+          fixed4 c = ( ( 1 - _BlendAlpha ) * tex2D( _MainTex, IN.uv_MainTex ) + _BlendAlpha * tex2D( _BlendTex, IN.uv_MainTex ) ) * _Color;
+          o.Albedo = c.rgb;
+          o.Alpha = c.a;
+        }
+        ENDCG
+     }
     FallBack "Diffuse"
 }
