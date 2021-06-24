@@ -30,9 +30,10 @@ public class ApplyGoLTexture : MonoBehaviour
 
     Texture2D toTexture2D(RenderTexture rTex)
     {
-        Texture2D tex = new Texture2D(512, 512, TextureFormat.RGB24, false);
+        Texture2D tex = new Texture2D(currentTexture.width, currentTexture.height, TextureFormat.RGB24, false);
         // ReadPixels looks at the active RenderTexture.
         RenderTexture.active = rTex;
+        tex.filterMode = FilterMode.Point;
         tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
         tex.Apply();
         return tex;
@@ -45,11 +46,15 @@ public class ApplyGoLTexture : MonoBehaviour
         result.enableRandomWrite = true;
         result.Create();
 
-        shader.SetTexture(kernelHandle, "Result", result);
-        shader.SetTexture(kernelHandle, "ImageInput", currentTexture);
-        shader.Dispatch(kernelHandle, 512/8 , 1024 / 8, 1);
+        RenderTexture input = new RenderTexture(currentTexture.width, currentTexture.height, 24);
+        input.enableRandomWrite = true;
+        RenderTexture.active = input;
+        // Copy your texture ref to the render texture
+        Graphics.Blit(currentTexture, input);
 
-        RenderTexture.active = result;
+        shader.SetTexture(kernelHandle, "Result", result);
+        shader.SetTexture(kernelHandle, "ImageInput", input);
+        shader.Dispatch(kernelHandle, currentTexture.width/8 , currentTexture.height / 8, 1);
         
         return toTexture2D(result);
     }
